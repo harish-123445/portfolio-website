@@ -5,7 +5,7 @@ import Portfolio from './components/Portfolio';
 import Admin from './components/Admin';
 import Login from './components/Login';
 import { PortfolioData } from './types';
-import { Settings, Home, Menu, X, LogOut, Github, Linkedin, Mail } from 'lucide-react';
+import { Settings, Menu, X, Github, Linkedin, Mail } from 'lucide-react';
 
 const App: React.FC = () => {
   const [data, setData] = useState<PortfolioData | null>(null);
@@ -17,17 +17,14 @@ const App: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // 1. Check LocalStorage (User Edits)
       const cached = localStorage.getItem('portfolio_data_cache');
       if (cached) {
         setData(JSON.parse(cached));
       } else {
-        // 2. Load Default Data
         const response = await fetch('./data.json');
         if (!response.ok) throw new Error("Failed to load local data.json");
         const json = await response.json();
         setData(json);
-        // Initialize Cache
         localStorage.setItem('portfolio_data_cache', JSON.stringify(json));
       }
     } catch (err) {
@@ -42,9 +39,7 @@ const App: React.FC = () => {
   }, []);
 
   const handleUpdate = async (newData: PortfolioData) => {
-    // Commit to State (Updates UI immediately)
     setData(newData);
-    // Commit to Storage (Persists across reloads)
     localStorage.setItem('portfolio_data_cache', JSON.stringify(newData));
   };
 
@@ -56,17 +51,14 @@ const App: React.FC = () => {
   if (loading || !data) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <div className="flex flex-col items-center gap-6 text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600"></div>
-          <p className="text-slate-500 font-bold text-lg animate-pulse">Loading Application...</p>
-        </div>
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
     <HashRouter>
-      <div className="min-h-screen flex flex-col bg-slate-50 selection:bg-indigo-100 selection:text-indigo-900 font-sans">
+      <div className="min-h-screen flex flex-col bg-white font-sans selection:bg-blue-100 selection:text-blue-900">
         <Navigation isAuthenticated={isAuthenticated} onLogout={handleLogout} profile={data.profile} />
         <main className="flex-grow">
           <Routes>
@@ -94,49 +86,58 @@ const Navigation: React.FC<{ isAuthenticated: boolean; onLogout: () => void; pro
     { label: 'Home', id: 'hero' },
     { label: 'Experience', id: 'experience' },
     { label: 'Skills', id: 'skills' },
-    { label: 'Work', id: 'projects' },
+    { label: 'Projects', id: 'projects' },
     { label: 'Contact', id: 'contact' },
   ];
 
   const handleScroll = (id: string) => {
     setIsOpen(false);
-    
     if (location.pathname !== '/') {
       navigate('/');
       setTimeout(() => {
         const element = document.getElementById(id);
         if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
+          const offset = 80;
+          const bodyRect = document.body.getBoundingClientRect().top;
+          const elementRect = element.getBoundingClientRect().top;
+          const elementPosition = elementRect - bodyRect;
+          const offsetPosition = elementPosition - offset;
+          window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
         }
       }, 100);
     } else {
       const element = document.getElementById(id);
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
+        const offset = 80;
+        const bodyRect = document.body.getBoundingClientRect().top;
+        const elementRect = element.getBoundingClientRect().top;
+        const elementPosition = elementRect - bodyRect;
+        const offsetPosition = elementPosition - offset;
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
       }
     }
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full glass-card border-b border-slate-200/50 backdrop-blur-xl bg-white/70">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-200/50">
+      <div className="max-w-6xl mx-auto px-6">
         <div className="flex justify-between h-20 items-center">
-          <button 
+          <div 
             onClick={() => handleScroll('hero')}
-            className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-80 transition-opacity tracking-tight"
+            className="text-xl font-bold text-slate-900 cursor-pointer hover:text-blue-600 transition-colors tracking-tight"
           >
             {isAdminView ? 'Admin Console' : profile.name}
-          </button>
+          </div>
 
           <div className="hidden md:flex space-x-1 items-center">
             {isAdminView ? (
               <>
-                <Link to="/" className="flex items-center space-x-2 text-slate-600 hover:text-indigo-600 font-bold transition-colors px-4 py-2 rounded-xl hover:bg-slate-100">
-                  <Home size={18} /> <span>View Website</span>
+                <Link to="/" className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors px-4 py-2 rounded-full hover:bg-slate-50">
+                  View Website
                 </Link>
                 {isAuthenticated && (
-                  <button onClick={onLogout} className="flex items-center space-x-2 text-red-500 hover:text-red-600 font-bold transition-colors px-4 py-2 rounded-xl hover:bg-red-50">
-                    <LogOut size={18} /> <span>Sign Out</span>
+                  <button onClick={onLogout} className="text-sm font-semibold text-red-600 hover:text-red-700 transition-colors px-4 py-2 rounded-full hover:bg-red-50">
+                    Log Out
                   </button>
                 )}
               </>
@@ -146,58 +147,55 @@ const Navigation: React.FC<{ isAuthenticated: boolean; onLogout: () => void; pro
                   <button 
                     key={item.label}
                     onClick={() => handleScroll(item.id)}
-                    className="text-slate-600 hover:text-indigo-600 font-bold transition-all px-4 py-2 rounded-xl hover:bg-slate-100"
+                    className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors px-4 py-2 rounded-full hover:bg-slate-50"
                   >
                     {item.label}
                   </button>
                 ))}
                 <Link 
                   to={isAuthenticated ? "/admin" : "/login"} 
-                  className="ml-2 p-3 rounded-xl bg-slate-100 text-slate-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm group"
-                  aria-label="Admin Settings"
+                  className="ml-2 text-slate-400 hover:text-slate-900 transition-colors p-2 hover:bg-slate-100 rounded-full"
+                  aria-label="Admin"
                 >
-                  <Settings size={20} className="group-hover:rotate-90 transition-transform" />
+                  <Settings size={20} />
                 </Link>
               </>
             )}
           </div>
 
           <div className="md:hidden">
-            <button onClick={() => setIsOpen(!isOpen)} className="text-slate-600 p-2 hover:bg-slate-100 rounded-xl transition-colors">
-              {isOpen ? <X size={28} /> : <Menu size={28} />}
+            <button onClick={() => setIsOpen(!isOpen)} className="text-slate-600 p-2 hover:bg-slate-50 rounded-lg">
+              {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
         </div>
       </div>
 
       {isOpen && (
-        <div className="md:hidden glass-card border-t border-slate-100 py-6 px-6 space-y-4 shadow-xl animate-in slide-in-from-top duration-300 absolute w-full bg-white/95">
+        <div className="md:hidden bg-white border-t border-slate-100 py-4 px-4 space-y-2 absolute w-full shadow-xl">
           {!isAdminView ? (
             <>
               {navItems.map(item => (
                 <button 
                   key={item.label}
                   onClick={() => handleScroll(item.id)}
-                  className="block w-full text-left font-bold text-slate-700 hover:text-indigo-600 py-3 text-lg border-b border-slate-50 last:border-0"
+                  className="block w-full text-left font-semibold text-slate-700 py-3 px-4 rounded-xl hover:bg-slate-50 hover:text-blue-600 transition-colors"
                 >
                   {item.label}
                 </button>
               ))}
-              <Link 
-                to="/admin" 
-                onClick={() => setIsOpen(false)} 
-                className="block font-black text-indigo-600 pt-4 mt-2"
-              >
-                Go to Admin
-              </Link>
+              <div className="border-t border-slate-100 my-2 pt-2">
+                <Link 
+                  to="/admin" 
+                  onClick={() => setIsOpen(false)} 
+                  className="block text-sm font-bold text-slate-400 py-3 px-4 hover:text-slate-900"
+                >
+                  Admin Login
+                </Link>
+              </div>
             </>
           ) : (
-            <>
-              <Link to="/" onClick={() => setIsOpen(false)} className="block font-bold text-slate-700 py-3 text-lg">View Public Site</Link>
-              {isAuthenticated && (
-                <button onClick={() => { onLogout(); setIsOpen(false); }} className="block font-bold text-red-500 w-full text-left py-3 text-lg">Logout</button>
-              )}
-            </>
+            <Link to="/" onClick={() => setIsOpen(false)} className="block font-semibold text-slate-700 py-3 px-4">Back to Site</Link>
           )}
         </div>
       )}
@@ -206,57 +204,26 @@ const Navigation: React.FC<{ isAuthenticated: boolean; onLogout: () => void; pro
 };
 
 const Footer: React.FC<{ profile: any }> = ({ profile }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const handleScroll = (id: string) => {
-    if (location.pathname !== '/') {
-      navigate('/');
-      setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 100);
-    } else {
-      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   return (
-    <footer className="bg-slate-900 text-white py-16 mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 border-b border-slate-800 pb-12">
-          <div className="space-y-4">
-            <h3 className="text-2xl font-black tracking-tight">{profile.name}</h3>
-            <p className="text-slate-400 max-w-sm leading-relaxed font-medium">{profile.bio}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-black mb-6 text-slate-500 uppercase tracking-widest">Navigation</h4>
-            <ul className="space-y-3 text-slate-400 font-bold">
-              <li><button onClick={() => handleScroll('hero')} className="hover:text-indigo-400 transition-colors">Top of Page</button></li>
-              <li><button onClick={() => handleScroll('experience')} className="hover:text-indigo-400 transition-colors">Experience</button></li>
-              <li><button onClick={() => handleScroll('projects')} className="hover:text-indigo-400 transition-colors">Projects</button></li>
-              <li><Link to="/login" className="hover:text-indigo-400 transition-colors">Admin Console</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-sm font-black mb-6 text-slate-500 uppercase tracking-widest">Connect</h4>
-            <div className="flex space-x-4">
-              {profile.github && (
-                <a href={profile.github} target="_blank" rel="noopener noreferrer" className="p-3 bg-slate-800 rounded-xl hover:bg-indigo-600 transition-all hover:-translate-y-1 shadow-lg shadow-black/20" aria-label="GitHub">
-                  <Github size={20} />
-                </a>
-              )}
-              {profile.linkedin && (
-                <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="p-3 bg-slate-800 rounded-xl hover:bg-indigo-600 transition-all hover:-translate-y-1 shadow-lg shadow-black/20" aria-label="LinkedIn">
-                  <Linkedin size={20} />
-                </a>
-              )}
-              <a href={`mailto:${profile.email}`} className="p-3 bg-slate-800 rounded-xl hover:bg-indigo-600 transition-all hover:-translate-y-1 shadow-lg shadow-black/20" aria-label="Email">
-                <Mail size={20} />
-              </a>
-            </div>
-          </div>
+    <footer className="bg-white border-t border-slate-100 py-16 mt-auto">
+      <div className="max-w-6xl mx-auto px-6 flex flex-col items-center">
+        <div className="mb-8">
+           <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{profile.name}</h3>
         </div>
-        <div className="pt-8 text-center text-slate-500 text-sm font-bold">
+        
+        <div className="flex space-x-8 mb-8">
+          {profile.github && (
+            <a href={profile.github} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-slate-900 transition-colors hover:-translate-y-1 transform duration-300"><Github size={24} /></a>
+          )}
+          {profile.linkedin && (
+            <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-blue-600 transition-colors hover:-translate-y-1 transform duration-300"><Linkedin size={24} /></a>
+          )}
+          <a href={`mailto:${profile.email}`} className="text-slate-400 hover:text-red-500 transition-colors hover:-translate-y-1 transform duration-300"><Mail size={24} /></a>
+        </div>
+        
+        <p className="text-slate-400 text-sm font-medium">
           &copy; {new Date().getFullYear()} {profile.name}. All rights reserved.
-        </div>
+        </p>
       </div>
     </footer>
   );
