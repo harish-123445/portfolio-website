@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { PortfolioData } from '../types';
 import { ExternalLink, ArrowRight, Send, AlertCircle, CheckCircle2, Terminal, Sparkles } from 'lucide-react';
+import Logger from '../utils/Logger';
 
 interface PortfolioProps {
   data: PortfolioData;
@@ -14,6 +15,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ data }) => {
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const scrollToSection = (id: string) => {
+    Logger.info(`Navigating to section: ${id}`);
     const element = document.getElementById(id);
     if (element) {
       const offset = 100;
@@ -52,6 +54,9 @@ const Portfolio: React.FC<PortfolioProps> = ({ data }) => {
     }
 
     setErrors(newErrors);
+    if (!isValid) {
+        Logger.warn('Contact form validation failed', newErrors);
+    }
     return isValid;
   };
 
@@ -61,11 +66,12 @@ const Portfolio: React.FC<PortfolioProps> = ({ data }) => {
     if (!validateForm()) return;
 
     setIsSending(true);
+    Logger.info('Submitting contact form...', { recipient: data.profile.email, sender: contactForm.email });
     
     try {
       // In a real backend, this would send an email to data.profile.email
-      console.log(`[System] Sending contact form details to admin email: ${data.profile.email}`);
-      console.log(`[System] Payload:`, contactForm);
+      // console.log(`[System] Sending contact form details to admin email: ${data.profile.email}`);
+      // console.log(`[System] Payload:`, contactForm);
 
       const existingMessages = JSON.parse(localStorage.getItem('contact_messages') || '[]');
       existingMessages.push({ ...contactForm, date: new Date().toISOString() });
@@ -74,9 +80,11 @@ const Portfolio: React.FC<PortfolioProps> = ({ data }) => {
       // Simulate network request duration
       await new Promise(resolve => setTimeout(resolve, 1500));
       setStatus('success');
+      Logger.info('Contact form submitted successfully');
       setContactForm({ name: '', email: '', message: '' });
       setErrors({});
     } catch (err) {
+      Logger.error('Failed to submit contact form', err);
       setStatus('error');
     } finally {
       setIsSending(false);

@@ -4,31 +4,63 @@ import { HashRouter, Routes, Route, Link, useLocation, useNavigate, Navigate } f
 import Portfolio from './components/Portfolio';
 import Admin from './components/Admin';
 import Login from './components/Login';
+import ErrorBoundary from './components/ErrorBoundary';
+import Logger from './utils/Logger';
 import { PortfolioData } from './types';
-import { Settings, Menu, X, Github, Linkedin, Mail } from 'lucide-react';
+import { Settings, Menu, X, Github, Linkedin, Mail, AlertOctagon } from 'lucide-react';
 
 const App: React.FC = () => {
   const [data, setData] = useState<PortfolioData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(
     !!localStorage.getItem('portfolio_auth_token')
   );
 
   const fetchData = async () => {
     setLoading(true);
+    setError(null);
+    Logger.info('Initializing application data fetch...');
+
     try {
+      // 1. Try Local Storage Cache
       const cached = localStorage.getItem('portfolio_data_cache');
       if (cached) {
-        setData(JSON.parse(cached));
-      } else {
-        const response = await fetch('./data.json');
-        if (!response.ok) throw new Error("Failed to load local data.json");
-        const json = await response.json();
-        setData(json);
-        localStorage.setItem('portfolio_data_cache', JSON.stringify(json));
+        Logger.info('Found cached data in localStorage. Loading...');
+        try {
+            const parsedData = JSON.parse(cached);
+            setData(parsedData);
+            setLoading(false);
+            // Background re-fetch to update cache if needed, optional strategy
+            return; 
+        } catch (parseErr) {
+            Logger.warn('Corrupted data in localStorage, clearing cache.', parseErr);
+            localStorage.removeItem('portfolio_data_cache');
+        }
       }
-    } catch (err) {
-      console.error('Data initialization failed:', err);
+
+      // 2. Fetch from JSON file
+      Logger.info('Fetching fresh data from ./data.json');
+      const response = await fetch('./data.json');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const json = await response.json();
+      Logger.info('Data fetched successfully');
+      
+      setData(json);
+      try {
+        localStorage.setItem('portfolio_data_cache', JSON.stringify(json));
+      } catch (storageErr) {
+        Logger.warn('Failed to cache initial data to localStorage (likely quota exceeded)', storageErr);
+      }
+
+    } catch (err: any) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown initialization error';
+      Logger.error('Data initialization failed', err);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -39,40 +71,70 @@ const App: React.FC = () => {
   }, []);
 
   const handleUpdate = async (newData: PortfolioData) => {
+    Logger.info('Global state update requested');
     setData(newData);
-    localStorage.setItem('portfolio_data_cache', JSON.stringify(newData));
+    // Note: The actual persistence logic is handled in Admin.tsx, 
+    // but we update the in-memory state here to reflect changes immediately.
   };
 
   const handleLogout = () => {
+    Logger.info('User logged out');
     localStorage.removeItem('portfolio_auth_token');
     setIsAuthenticated(false);
   };
 
-  if (loading || !data) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="flex flex-col items-center gap-4">
+            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-slate-400 font-medium text-sm animate-pulse">Loading resources...</p>
+        </div>
       </div>
     );
   }
 
+  if (error || !data) {
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-slate-50 px-4">
+            <div className="text-center max-w-md">
+                <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <AlertOctagon size={32} />
+                </div>
+                <h2 className="text-xl font-bold text-slate-900 mb-2">Failed to Load Application</h2>
+                <p className="text-slate-500 mb-6">
+                    We couldn't load the portfolio data. This might be due to a network issue or missing configuration files.
+                </p>
+                <div className="bg-white p-4 rounded border border-slate-200 text-left text-xs font-mono text-red-500 mb-6 overflow-auto">
+                    Error: {error || 'Data is null'}
+                </div>
+                <button onClick={fetchData} className="px-6 py-2 bg-slate-900 text-white rounded-lg font-bold hover:bg-black transition-colors">
+                    Retry
+                </button>
+            </div>
+        </div>
+    );
+  }
+
   return (
-    <HashRouter>
-      <div className="min-h-screen flex flex-col bg-white font-sans selection:bg-blue-100 selection:text-blue-900">
-        <Navigation isAuthenticated={isAuthenticated} onLogout={handleLogout} profile={data.profile} />
-        <main className="flex-grow">
-          <Routes>
-            <Route path="/" element={<Portfolio data={data} />} />
-            <Route path="/login" element={<Login onLogin={() => setIsAuthenticated(true)} />} />
-            <Route 
-              path="/admin" 
-              element={isAuthenticated ? <Admin data={data} onUpdate={handleUpdate} /> : <Navigate to="/login" />} 
-            />
-          </Routes>
-        </main>
-        <Footer profile={data.profile} />
-      </div>
-    </HashRouter>
+    <ErrorBoundary>
+      <HashRouter>
+        <div className="min-h-screen flex flex-col bg-white font-sans selection:bg-blue-100 selection:text-blue-900">
+          <Navigation isAuthenticated={isAuthenticated} onLogout={handleLogout} profile={data.profile} />
+          <main className="flex-grow">
+            <Routes>
+              <Route path="/" element={<Portfolio data={data} />} />
+              <Route path="/login" element={<Login onLogin={() => setIsAuthenticated(true)} />} />
+              <Route 
+                path="/admin" 
+                element={isAuthenticated ? <Admin data={data} onUpdate={handleUpdate} /> : <Navigate to="/login" />} 
+              />
+            </Routes>
+          </main>
+          <Footer profile={data.profile} />
+        </div>
+      </HashRouter>
+    </ErrorBoundary>
   );
 };
 
