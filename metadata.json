@@ -1,0 +1,5 @@
+{
+  "name": "Harish's Portfolio",
+  "description": "A full-stack portfolio solution featuring a professional, responsive public website and a comprehensive admin console for real-time content management, powered by FastAPI and React.",
+  "requestFramePermissions": []
+}

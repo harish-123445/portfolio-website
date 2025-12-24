@@ -1,0 +1,59 @@
+
+{
+    "profile": {
+        "name": "Alex Rivier",
+        "title": "Full-Stack Software Architect",
+        "bio": "Passionate about creating efficient, beautiful, and accessible web solutions. I specialize in React, Python, and cloud-native architectures. With over 8 years of experience, I help companies turn complex problems into simple digital experiences.",
+        "photo_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&h=400&auto=format&fit=crop",
+        "email": "alex.rivier@example.com",
+        "github": "https://github.com/alexrivier",
+        "linkedin": "https://linkedin.com/in/alexrivier"
+    },
+    "experience": [
+        {
+            "id": "exp1",
+            "company": "Innovate AI",
+            "role": "Senior Engineer",
+            "period": "2022 - Present",
+            "description": "Architecting high-performance machine learning dashboards and managing microservices infrastructure."
+        },
+        {
+            "id": "exp2",
+            "company": "WebFlow Dynamics",
+            "role": "Full-Stack Developer",
+            "period": "2019 - 2022",
+            "description": "Developed dynamic user interfaces and optimized backend query performance by 40%."
+        }
+    ],
+    "skills": ["React.js", "TypeScript", "FastAPI", "Python", "Tailwind CSS", "AWS", "PostgreSQL", "Docker"],
+    "projects": [
+        {
+            "id": "proj1",
+            "title": "Global Logistics Tracker",
+            "description": "A real-time tracking system for international freight using WebSockets and React Leaflet.",
+            "link": "https://github.com",
+            "image": "https://picsum.photos/seed/logistics/600/400"
+        },
+        {
+            "id": "proj2",
+            "title": "Zenith Portfolio System",
+            "description": "The very system you are seeing right now, built with FastAPI and React for ultimate flexibility.",
+            "link": "https://github.com",
+            "image": "https://picsum.photos/seed/portfolio/600/400"
+        }
+    ],
+    "education": [
+        {
+            "id": "edu1",
+            "institution": "Stanford University",
+            "degree": "Master of Computer Science",
+            "year": "2019"
+        },
+        {
+            "id": "edu2",
+            "institution": "MIT",
+            "degree": "Bachelor of Software Engineering",
+            "year": "2017"
+        }
+    ]
+}
